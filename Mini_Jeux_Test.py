@@ -73,8 +73,8 @@ class Racket:
 
     def move_right(self):
         self.erase()
-        if self.y < (Right_Value - len(self.skin) - 2):
-            self.y += 1
+        if self.y < (Right_Value - len(self.skin) - 5):
+            self.y += velocity
         move(self.x, self.y)
         uart.write(self.skin)
         delay(100)
@@ -82,7 +82,7 @@ class Racket:
     def move_left(self):
         self.erase()
         if self.y > (Left_Value + 2):
-            self.y -= 1
+            self.y -= velocity
         move(self.x, self.y)
         uart.write(self.skin)
         delay(100)
@@ -90,7 +90,7 @@ class Racket:
     def move_backward(self):
         self.erase()
         if self.x < (Bottom_Value - 2):
-            self.x += 1
+            self.x += velocity
         move(self.x, self.y)
         uart.write(self.skin)
         delay(100)
@@ -98,17 +98,32 @@ class Racket:
     def move_fordward(self):
         self.erase()
         if self.x > (Max_Value_move - 2):
-            self.x -= 1
+            self.x -= velocity
         move(self.x, self.y)
         uart.write(self.skin)
         delay(100)
 
 
-Left_Value = 0
-Right_Value = 205
-Top_Value = 0
-Max_Value_move = 42
-Bottom_Value = 62
+class Projectil:
+
+    def __init__(self, x, y, skin):
+        self.x = x
+        self.y = y
+        self.skin = skin
+
+    def erase(self):
+        move(self.x, self.y)
+        uart.write('  ' * len(self.skin))
+
+    def move(self):
+        self.erase()
+        if self.x > (Top_Value + 2):
+            self.x -= (velocity * 2)
+            move(self.x, self.y)
+            uart.write(self.skin)
+        elif self.x == (Top_Value + 2):
+            proj_group.remove(self)
+        delay(1)
 
 
 def init_jeu():
@@ -124,10 +139,20 @@ def init_jeu():
         move(Bottom_Value, Value_y)
         uart.write("~")
 
+
+Left_Value = 0
+Right_Value = 205
+Top_Value = 0
+Max_Value_move = 42
+Bottom_Value = 62
+
+velocity = 1
+
 value_spawn_x = 60
 value_spawn_y = 100
 
 r = Racket(x=value_spawn_x, y=value_spawn_y, skin="|-0-|")
+proj_group = []
 
 addr_who_am_i = 0x0F
 #uart.write(read_reg(addr_who_am_i))
@@ -148,11 +173,11 @@ while True:
 
     if push_button.value() == 1:
         wait_pin_change(pin=push_button, etat_souhaite=1)
-        clear_screen()
-        x = value_spawn_x
-        y = value_spawn_y
-        move(x, y)
+        proj_group.append(Projectil(x=(r.x+1), y=(r.y+2), skin="@"))
         wait_pin_change(pin=push_button, etat_souhaite=0)
+
+    for projectil in proj_group:
+        projectil.move()
 
     if x_accel < 247:
         led_3.on()
@@ -189,5 +214,6 @@ while True:
         led_1.on()
         led_2.off()
         r.move_right()
+
 
 
