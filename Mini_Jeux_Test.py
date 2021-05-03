@@ -117,11 +117,11 @@ class Projectil:
 
     def move(self):
         self.erase()
-        if self.x > (Top_Value + 2):
+        if self.x > (Top_Value + 3):
             self.x -= (velocity * 2)
             move(self.x, self.y)
             uart.write(self.skin)
-        elif self.x == (Top_Value + 2):
+        elif self.x == (Top_Value + 3):
             proj_group.remove(self)
         delay(1)
 
@@ -172,9 +172,7 @@ while True:
     #print("{:20}, {:20}, {:20}".format(x_accel, y_accel, z_accel))
 
     if push_button.value() == 1:
-        wait_pin_change(pin=push_button, etat_souhaite=1)
         proj_group.append(Projectil(x=(r.x+1), y=(r.y+2), skin="@"))
-        wait_pin_change(pin=push_button, etat_souhaite=0)
 
     for projectil in proj_group:
         projectil.move()
