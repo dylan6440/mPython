@@ -173,6 +173,7 @@ while True:
 
     if push_button.value() == 1:
         proj_group.append(Projectil(x=(r.x+1), y=(r.y+2), skin="@"))
+        delay(1)
 
     for projectil in proj_group:
         projectil.move()
