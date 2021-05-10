@@ -8,11 +8,11 @@ Max_Value_move = 42
 Bottom_Value = 62
 
 velocity = 1
+value_max_proj = 20
 
 value_spawn_x = 60
 value_spawn_y = 100
 
-value_max_proj = 20
 
 CS = Pin("PE3", Pin.OUT_PP)
 SPI_1 = SPI(
@@ -46,7 +46,7 @@ def wait_pin_change(pin, etat_souhaite):
 
 
 def clear_screen():
-    uart.write("\x1b[2J \x1b[ ? 25 l")
+    uart.write("\x1b[2J\x1b[?25l")
 
 
 def move(x, y):
@@ -138,8 +138,8 @@ class Projectil:
 
     def move(self):
         self.erase()
-        if self.x > (Top_Value + 3):
-            self.x -= (velocity * 2)
+        if self.x > (Top_Value + velocity + 3):
+            self.x -= (velocity)
             move(self.x, self.y)
             uart.write(self.skin)
         else:
@@ -159,13 +159,34 @@ class Ship:
 
 
 def compteur():
-    move((Bottom_Value/2), (Right_Value/2))
-    for i in range(15):
-        value_compteur = str(i + " / ")
+    move(20, 70)
+    for i in range(15, -1, -1):
+        value_compteur = "{} | ".format(i)
         uart.write(value_compteur)
         if push_button.value() == 1:
             break
         delay(1000)
+
+
+def compteur_end():
+    move(20, 25)
+    text = "Try again : "
+    uart.write(text)
+    for i in range(60, 30, -1):
+        value_compteur = "{} | ".format(i)
+        uart.write(value_compteur)
+        if push_button.value() == 1:
+            break
+        delay(1000)
+    move(21, (25+len(text)))
+    for i in range(30, -1, -1):
+        value_compteur = "{} | ".format(i)
+        uart.write(value_compteur)
+        if push_button.value() == 1:
+            break
+        delay(1000)
+
+
 
 def init_jeu():
     for Value_x in range(int(Top_Value), int(Bottom_Value)):
@@ -181,69 +202,111 @@ def init_jeu():
         uart.write("~")
 
 
-def velocity_up():
+def velocity_up(timer):
     global value_max_proj, velocity
-    if velocity < 10:
+    if velocity < 5:
         velocity += 1
 
     if value_max_proj > 3:
         value_max_proj -= 2
 
+def logo():
+    logo = r""" 
+ ________  ________  ________  ________  _______           ___  ________   ___      ___ ________  ________  _______   ________  ________      
+|\   ____\|\   __  \|\   __  \|\   ____\|\  ___ \         |\  \|\   ___  \|\  \    /  /|\   __  \|\   ___ \|\  ___ \ |\   __  \|\   ____\     
+\ \  \___|\ \  \|\  \ \  \|\  \ \  \___|\ \   __/|        \ \  \ \  \\ \  \ \  \  /  / | \  \|\  \ \  \_|\ \ \   __/|\ \  \|\  \ \  \___|_    
+ \ \_____  \ \   ____\ \   __  \ \  \    \ \  \_|/__       \ \  \ \  \\ \  \ \  \/  / / \ \   __  \ \  \ \\ \ \  \_|/_\ \   _  _\ \_____  \   
+  \|____|\  \ \  \___|\ \  \ \  \ \  \____\ \  \_|\ \       \ \  \ \  \\ \  \ \    / /   \ \  \ \  \ \  \_\\ \ \  \_|\ \ \  \\  \\|____|\  \  
+    ____\_\  \ \__\    \ \__\ \__\ \_______\ \_______\       \ \__\ \__\\ \__\ \__/ /     \ \__\ \__\ \_______\ \_______\ \__\\ _\ ____\_\  \ 
+   |\_________\|__|     \|__|\|__|\|_______|\|_______|        \|__|\|__| \|__|\|__|/       \|__|\|__|\|_______|\|_______|\|__|\|__|\_________\
+   \|_________|                                                                                                                   \|_________|                                                                                                                                         
+"""
+    tab_logo = logo.splitlines()
+    largeur = len(tab_logo[7])
+    a = 1
+    b = int((Right_Value - largeur)/2)
+    for i in tab_logo:
+        move((25 + a), b)
+        uart.write(i)
+        a += 1
+
+def logo_game_over():
+    logo = r"""
+ ________  ________  _____ ______   _______           ________  ___      ___ _______   ________     
+|\   ____\|\   __  \|\   _ \  _   \|\  ___ \         |\   __  \|\  \    /  /|\  ___ \ |\   __  \    
+\ \  \___|\ \  \|\  \ \  \\\__\ \  \ \   __/|        \ \  \|\  \ \  \  /  / | \   __/|\ \  \|\  \   
+ \ \  \  __\ \   __  \ \  \\|__| \  \ \  \_|/__       \ \  \\\  \ \  \/  / / \ \  \_|/_\ \   _  _\  
+  \ \  \|\  \ \  \ \  \ \  \    \ \  \ \  \_|\ \       \ \  \\\  \ \    / /   \ \  \_|\ \ \  \\  \| 
+   \ \_______\ \__\ \__\ \__\    \ \__\ \_______\       \ \_______\ \__/ /     \ \_______\ \__\\ _\ 
+    \|_______|\|__|\|__|\|__|     \|__|\|_______|        \|_______|\|__|/       \|_______|\|__|\|__|                                                                                                  
+"""
+
+    tab_logo = logo.splitlines()
+    largeur = len(tab_logo[6])
+    a = 1
+    b = int((Right_Value - largeur) / 2)
+    for i in tab_logo:
+        move((35 + a), b)
+        uart.write(i)
+        a += 1
+
 
 def game_play():
-    x_accel = read_acceleration(0x29)
-    y_accel = read_acceleration(0x2B)
-    #z_accel = read_acceleration(0x2D)
-    # value = str("Value X : {}, Value Y : {}, Value Z : {} \n".format(x_accel, y_accel, z_accel))
-    # uart.write(value)
-    # print("{:20}, {:20}, {:20}".format(x_accel, y_accel, z_accel))
+    t = Timer(4, freq=1/60)
+    t.callback(velocity_up)
 
-    t = Timer(4, freq=0.02/6)
-    t.callback(velocity_up())
-    move((Right_Value + 10), (Top_Value + 10))
-    uart.write("Velocity = {} | Max Projectil = {} | Projectil Actuel = {} ".format(velocity, value_max_proj, len(proj_group)))
+    while True:
+
+        x_accel = read_acceleration(0x29)
+        y_accel = read_acceleration(0x2B)
+        #z_accel = read_acceleration(0x2D)
+        # value = str("Value X : {}, Value Y : {}, Value Z : {} \n".format(x_accel, y_accel, z_accel))
+        # uart.write(value)
+        # print("{:20}, {:20}, {:20}".format(x_accel, y_accel, z_accel))
+
+        move((Right_Value + 10), (Top_Value + 10))
+        uart.write("Velocity = {} | Max Projectil = {} | Projectil Actuel = {} ".format(velocity, value_max_proj, len(proj_group)))
 
 
-    if push_button.value() == 1 and len(proj_group) < value_max_proj:
-        new_proj()
+        if push_button.value() == 1 and len(proj_group) < value_max_proj:
+            new_proj()
 
-    for projectil in proj_group:
-        projectil.move()
+        for projectil in proj_group:
+            projectil.move()
 
-    if x_accel < 247:
-        led_3.on()
-        led_4.off()
-        r.move_fordward()
+        if x_accel < 247:
+            led_3.on()
+            led_4.off()
+            r.move_fordward()
 
-    elif x_accel == 247:
-        led_4.on()
-        led_3.on()
-        delay(100)
-        led_4.off()
-        led_3.off()
+        elif x_accel == 247:
+            led_4.on()
+            led_3.on()
+            delay(100)
+            led_4.off()
+            led_3.off()
 
-    elif x_accel > 247:
-        led_4.on()
-        led_3.off()
-        r.move_backward()
+        elif x_accel > 247:
+            led_4.on()
+            led_3.off()
+            r.move_backward()
 
-    if y_accel < 7:
-        led_2.on()
-        led_1.off()
-        r.move_left()
+        if y_accel < 7:
+            led_2.on()
+            led_1.off()
+            r.move_left()
 
-    elif y_accel == 7:
-        led_2.on()
-        led_1.on()
-        delay(100)
-        led_2.off()
-        led_1.off()
+        elif y_accel == 7:
+            led_2.on()
+            led_1.on()
+            delay(100)
+            led_2.off()
+            led_1.off()
 
-    elif y_accel > 7:
-        led_1.on()
-        led_2.off()
-        r.move_right()
-
+        elif y_accel > 7:
+            led_1.on()
+            led_2.off()
+            r.move_right()
 
 
 r = Racket(x=value_spawn_x, y=value_spawn_y, skin="|-0-|")
@@ -254,19 +317,26 @@ addr_who_am_i = 0x0F
 addr_ctrl_reg1 = 0x20
 write_reg(addr_ctrl_reg1, 0x77)
 
-game = "Play"
-
+game = "Lancement"
 
 while True:
 
     if game == "Lancement":
         clear_screen()
         init_jeu()
-        #compteur()
+        logo()
+        compteur()
         game = "Play"
 
     elif game == "Play":
         clear_screen()
         init_jeu()
-        while game == "Play":
-            game_play()
+        game_play()
+
+    elif game == "Game OVER":
+        clear_screen()
+        init_jeu()
+        logo()
+        logo_game_over()
+        compteur_end()
+        game = "Play"

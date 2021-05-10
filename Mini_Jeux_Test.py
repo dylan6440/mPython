@@ -222,9 +222,11 @@ def logo():
    \|_________|                                                                                                                   \|_________|                                                                                                                                         
 """
     tab_logo = logo.splitlines()
+    largeur = len(tab_logo[7])
     a = 1
+    b = int((Right_Value - largeur)/2)
     for i in tab_logo:
-        move((25 + a), 30)
+        move((25 + a), b)
         uart.write(i)
         a += 1
 
@@ -240,9 +242,11 @@ def logo_game_over():
 """
 
     tab_logo = logo.splitlines()
+    largeur = len(tab_logo[6])
     a = 1
+    b = int((Right_Value - largeur) / 2)
     for i in tab_logo:
-        move((35 + a), 60)
+        move((35 + a), b)
         uart.write(i)
         a += 1
 
@@ -313,7 +317,7 @@ addr_who_am_i = 0x0F
 addr_ctrl_reg1 = 0x20
 write_reg(addr_ctrl_reg1, 0x77)
 
-game = "Game OVER"
+game = "Lancement"
 
 while True:
 
