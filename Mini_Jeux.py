@@ -1,8 +1,9 @@
 # main.py -- put your code here!
 from pyb import SPI, Pin, UART, LED, delay, Timer
-from random import choice
+from random import choice, randint
+import pyb
 
-# entrez l'adresse de votre axcélérométre
+# entrez l'adresse de votre accélérométre
 value_addr_X = 0x29
 value_addr_Y = 0x2B
 
@@ -11,9 +12,9 @@ balanced_x = 247
 balanced_y = 7
 
 # Ne toucher pas ci-dessous
-# |------------------------------------------------------------------------------------------------|
-# |------------------------------------------------------------------------------------------------|
-# |------------------------------------------------------------------------------------------------|
+# |--------------------------------------------------------------------------------------------------------------------|
+# |--------------------------------------------------------------------------------------------------------------------|
+# |--------------------------------------------------------------------------------------------------------------------|
 
 # definition des ports SPI | UART | Button | LED
 CS = Pin("PE3", Pin.OUT_PP)
@@ -63,6 +64,8 @@ value_spawn_y = 100
 
 proj_group = []
 spaceship_group = []
+spaceship_group_2 = []
+spaceship_group_3 = []
 proj_spaceship_group = []
 
 
@@ -145,7 +148,7 @@ class Racket:
         led_1.off()
         self.erase()
         if self.y > (Left_Value + 2 + len(self.skin)):
-            self.y -= 1 +velocity
+            self.y -= 1 + velocity
         move(self.x, self.y)
         uart.write(self.skin)
         delay(100)
@@ -207,6 +210,20 @@ class Projectil:
             if enemies.x <= self.x < enemies.x + 2 and enemies.y <= self.y < enemies.y + len(enemies.skin):
                 enemies.erase()
                 spaceship_group.remove(enemies)
+                self.etat = 1
+                score += (600 - (velocity * 100))
+
+        for enemies in spaceship_group_2[:]:
+            if enemies.x <= self.x < enemies.x + 2 and enemies.y <= self.y < enemies.y + len(enemies.skin):
+                enemies.erase()
+                spaceship_group_2.remove(enemies)
+                self.etat = 1
+                score += (600 - (velocity * 100))
+
+        for enemies in spaceship_group_3[:]:
+            if enemies.x <= self.x < enemies.x + 2 and enemies.y <= self.y < enemies.y + len(enemies.skin):
+                enemies.erase()
+                spaceship_group_3.remove(enemies)
                 self.etat = 1
                 score += (600 - (velocity * 100))
 
@@ -284,6 +301,13 @@ class Spaceship:
         move(self.x, self.y)
         uart.write(self.skin)
 
+    def move_backward(self):
+        self.erase()
+        if self.x > (Top_Value + velocity):
+            self.x -= 1
+        move(self.x, self.y)
+        uart.write(self.skin)
+
     def standby(self):
         self.erase()
         move(self.x, self.y)
@@ -315,9 +339,11 @@ def velocity_up(timer):
     if value_max_proj > 1:
         value_max_proj -= 1
 
+
 def temps_de_jeux_up(timer):
     global temps_de_jeux
     temps_de_jeux += 1
+
 
 def compteur_end():
     move(18, 25)
@@ -441,7 +467,8 @@ def game_reset():
 
 
 def game_info():
-    move((Right_Value + 10), (Top_Value + 10))
+    spaceship = len(spaceship_group) + len(spaceship_group_2) + len(spaceship_group_3)
+    move((Bottom_Value + 1), (Left_Value + 10))
     info_game = "Niveau : {} | Temps de Jeux = {} | Score = {} | Velocity = {} | Max Projectil = {} | Projectil Actuel = {} | Spaceship = {} ".format(
         game,
         temps_de_jeux,
@@ -449,19 +476,19 @@ def game_info():
         velocity,
         value_max_proj,
         len(proj_group),
-        len(spaceship_group),
+        spaceship,
     )
     uart.write(info_game)
 
 
 def game_home():
     global game, temps_de_jeux, default_temps_de_jeux
+    temps_de_jeux = default_temps_de_jeux
     clear_screen()
     borders()
     logo()
     game_info()
     game_reset()
-    temps_de_jeux = default_temps_de_jeux
 
     # 120 caracteres par ligne
 
@@ -470,8 +497,8 @@ ________________________________________________________________________________
 |                                                                                                                      |
 |                                          Bienvenue sur mon Space Invaders !                                          |
 |                                      Créé par Dylan Orto élève à Ynov Bordeaux                                       |
-|                 Vous retrouverez dans ce jeux, plusieurs niveaux dans lesquels la difficulté augmente                 |
-|                              Vous aurez une petite surprise dans le dernier niveau ;-)                              |
+|                 Vous retrouverez dans ce jeux, plusieurs niveaux dans lesquels la difficulté augmente                |
+|                              Vous aurez une petite surprise dans le dernier niveau ;-)                               |
 |                                                                                                                      |
 |                     Lisez les règles du jeux avant de lancer le décompte pour lancer la partie !                     |
 |             Pour lancer le décompte il vous suffit d'appuyer 1 seconde sur le boutton bleu de la carte !             |
@@ -481,26 +508,25 @@ ________________________________________________________________________________
 |                                                                                                                      |
 | Règles du jeux :                                                                                                     |
 |                                                                                                                      |
-| - Votre vaisseau peut se déplacer de la gauche vers la droite mais aussi d'avant en arrière !                         |
+| - Votre vaisseau peut se déplacer de la gauche vers la droite mais aussi d'avant en arrière !                        |
 |   Bouger votre carte là où vous voulez amener votre vaiseau !                                                        |
 |                                                                                                                      |
-| - Votre vaisseau a un nombre limité de missiles tirés en simultané                                                         |
+| - Votre vaisseau a un nombre limité de missiles tirés en simultané                                                   |
 |   Il vous suffit d'appuyer sur le boutton bleu de la carte !                                                         |
 |                                                                                                                      |
 | - Toutes les 3 minutes :                                                                                             |
 |                                                                                                                      |        
 |       - Votre vitesse de déplacement augmentera pour augmenter la difficulté                                         |
-|       - Votre nombre de missiles simultanés diminuera                                                              |
-|       - Votre score obtenu par ennemies éliminés diminue de 100                                                     |
+|       - Votre nombre de missiles simultanés diminuera                                                                |
+|       - Votre score obtenu par ennemies éliminés diminue de 100                                                      |
 |         Les données sont écrites en bas à gauche !                                                                   |
 |                                                                                                                      |
-|           La vitesse de déplacement, le nombre de missiles simultané et le score obtenue par éliminations          |
-|                          seront remits à leur valeur par défaut à chaque début de niveau                          |
+|           La vitesse de déplacement, le nombre de missiles simultané et le score obtenue par éliminations            |
+|                          seront remits à leur valeur par défaut à chaque début de niveau                             |
 |                                                                                                                      |
-| - Les vaisseaux ennemies ont la capacité de tirer des missiles                                                           |
+| - Les vaisseaux ennemies ont la capacité de tirer des missiles                                                       |
 |                                                                                                                      |
-| - Quand le niveau augmente, les vaisseaux gagnent en capacité de déplacement et tirent plus souvent                 | 
-|                                                                                                                      |
+| - Quand le niveau augmente, les vaisseaux gagnent en capacité de déplacement et tirent plus souvent                  | 
 |                                                                                                                      |
 |                                                                                                                      |
 |                                             Obtenez le meilleur Score !!                                             |
@@ -543,7 +569,7 @@ ________________________________________________________________________________
 |                                            Bravo vous avez fini le jeux !                                            |
 |                                                                                                                      |
 |                                                                                                                      |
-|                                           Votre Score final est de : {}                                           |
+|                                           Votre Score final est de : {}                                              |
 |                                       Votre temps total pour finir est de : {}                                       |
 |                                                                                                                      |
 |                                                                                                                      |
@@ -573,6 +599,7 @@ ________________________________________________________________________________
                 delay(1000)
             game = "HOME"
             break
+
 
 def game_over():
     global game
@@ -585,7 +612,7 @@ def game_over():
 ________________________________________________________________________________________________________________________ 
 |                                                                                                                      |
 |                                                                                                                      |
-|                                            Vous êtes mort ! Essayez encore !!                                             |
+|                                          Vous êtes mort ! Essayez encore !!                                          |
 |                                                                                                                      |
 |                                                                                                                      |
 |                                           Votre Score final est de : {}                                           |
@@ -610,7 +637,7 @@ ________________________________________________________________________________
 
     while True:
         if push_button.value() == 1:
-            move(18, 60)
+            move(20, 60)
             uart.write("Retours au menu principale dans : ")
             for i in range(10, -1, -1):
                 value_compteur = "{} | ".format(i)
@@ -618,7 +645,6 @@ ________________________________________________________________________________
                 delay(1000)
             game = "HOME"
             break
-
 
 
 # definition des niveaux
@@ -726,6 +752,9 @@ def game_level_2():
         for x in range(2):
             spaceship_group.append(Spaceship(x=8 + x * 6, y=24 + 19 * y, skin="||--V--||"))
 
+    for enemies in spaceship_group[:]:
+        enemies.standby()
+
     while True:
         game_info()
 
@@ -813,6 +842,9 @@ def game_level_3():
         for x in range(3):
             spaceship_group.append(Spaceship(x=8 + x * 6, y=24 + 19 * y, skin="||--V--||"))
 
+    for enemies in spaceship_group[:]:
+        enemies.standby()
+
     while True:
         game_info()
 
@@ -845,8 +877,8 @@ def game_level_3():
             elif (clock_timer % 10) == 0 or (clock_timer % 15) == 0 or (clock_timer % 20) == 0:
                 choice(spaceship_group).shoot()
 
-            elif (clock_timer % 30) == 0:
-                for enemies in spaceship_group:
+            elif (clock_timer % 20) == 0:
+                for enemies in spaceship_group[:]:
                     enemies.move_forward()
 
         elif len(spaceship_group) == 0:
@@ -897,12 +929,33 @@ def game_level_4():
     t = Timer(6, freq=1)
     t.callback(temps_de_jeux_up)
 
-    for y in range(8):
-        for x in range(4):
-            spaceship_group.append(Spaceship(x=5 + x * 6, y=33 + 19 * y, skin="||--V--||"))
-    for y in range(9):
+    for y in range(3):
         for x in range(3):
-            spaceship_group.append(Spaceship(x=8 + x * 6, y=24 + 19 * y, skin="||--V--||"))
+            spaceship_group.append(Spaceship(x=10 + x * 6, y=24 + 19 * y, skin="||--V--||"))
+    for y in range(2):
+        for x in range(2):
+            spaceship_group.append(Spaceship(x=13 + x * 6, y=33 + 19 * y, skin="||--V--||"))
+
+    for y in range(3):
+        for x in range(3):
+            spaceship_group_2.append(Spaceship(x=25 + x * 6, y=81 + 19 * y, skin="||--V--||"))
+    for y in range(2):
+        for x in range(2):
+            spaceship_group_2.append(Spaceship(x=28 + x * 6, y=90 + 19 * y, skin="||--V--||"))
+
+    for y in range(3):
+        for x in range(3):
+            spaceship_group_3.append(Spaceship(x=10 + x * 6, y=138 + 19 * y, skin="||--V--||"))
+    for y in range(2):
+        for x in range(2):
+            spaceship_group_3.append(Spaceship(x=13 + x * 6, y=147 + 19 * y, skin="||--V--||"))
+
+    for enemies in spaceship_group[:]:
+        enemies.standby()
+    for enemies in spaceship_group_2[:]:
+        enemies.standby()
+    for enemies in spaceship_group_3[:]:
+        enemies.standby()
 
     while True:
         game_info()
@@ -924,23 +977,49 @@ def game_level_4():
         for proj_spaceship in proj_spaceship_group:
             proj_spaceship.move()
 
-        if len(spaceship_group) > 0:
+        if len(spaceship_group) > 0 or len(spaceship_group_2) > 0 or len(spaceship_group_3) > 0:
             if (clock_timer % 10) != 0:
                 if (clock_timer % 10) < 5:
                     for enemies in spaceship_group:
                         enemies.move_left()
+                    for enemies in spaceship_group_2:
+                        enemies.move_left()
+                    for enemies in spaceship_group_3:
+                        enemies.move_left()
                 elif (clock_timer % 10) > 5:
                     for enemies in spaceship_group:
                         enemies.move_right()
+                    for enemies in spaceship_group_2:
+                        enemies.move_right()
+                    for enemies in spaceship_group_3:
+                        enemies.move_right()
 
-            elif (clock_timer % 5) == 0 or (clock_timer % 10) == 0 or (clock_timer % 15) == 0 or (clock_timer % 20) == 0:
+            elif (clock_timer % 5) == 0 or (clock_timer % 10) == 0:
                 choice(spaceship_group).shoot()
+                choice(spaceship_group_2).shoot()
+                choice(spaceship_group_3).shoot()
 
-            elif (clock_timer % 30) == 0:
-                for enemies in spaceship_group:
-                    enemies.move_forward()
+            if (clock_timer % 20) == 0:
+                a = randint(0, 5)
 
-        elif len(spaceship_group) == 0:
+                if a == 1:
+                    for enemies in spaceship_group[:]:
+                        enemies.move_forward()
+                if a == 2:
+                    for enemies in spaceship_group_2[:]:
+                        enemies.move_forward()
+                if a == 3:
+                    for enemies in spaceship_group_3[:]:
+                        enemies.move_forward()
+                if a == 4:
+                    for enemies in spaceship_group[:]:
+                        enemies.move_backward()
+                    for enemies in spaceship_group_2[:]:
+                        enemies.move_backward()
+                    for enemies in spaceship_group_3[:]:
+                        enemies.move_backward()
+
+        elif len(spaceship_group) == 0 and len(spaceship_group_2) == 0 and len(spaceship_group_3) == 0:
             game_reset()
             game = "Victory"
             break
@@ -977,7 +1056,6 @@ r = Racket(x=value_spawn_x, y=value_spawn_y, skin="|-0-|")
 
 addr_ctrl_reg1 = 0x20
 write_reg(addr_ctrl_reg1, 0x77)
-
 
 # boucle infinie pour les differents stades du jeux
 
