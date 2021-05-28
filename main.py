@@ -48,10 +48,11 @@ Max_Value_move = 52
 Bottom_Value = 62
 
 default_velocity = 1
-velocity = 1
+velocity = default_velocity
+test = 0
 
 default_value_max_proj = 6
-value_max_proj = 6
+value_max_proj = default_value_max_proj
 
 score = 0
 default_score = 0
@@ -130,8 +131,8 @@ class Racket:
         self.etat = 0
 
     def erase(self):
-        move(self.x, self.y)
-        uart.write('  ' * len(self.skin))
+        move(x=self.x, y=(self.y - 1))
+        uart.write(' ' * (len(self.skin) +1))
 
     def move_right(self):
         led_1.on()
@@ -185,8 +186,8 @@ class Projectil:
         self.etat = 0
 
     def erase(self):
-        move(self.x, self.y)
-        uart.write('  ' * len(self.skin))
+        move(self.x, (self.y - 1))
+        uart.write(' ' * (len(self.skin) + 1))
 
     def move(self):
         self.erase()
@@ -206,26 +207,14 @@ class Projectil:
 
     def collide(self):
         global score
-        for enemies in spaceship_group[:]:
-            if enemies.x <= self.x < enemies.x + 2 and enemies.y <= self.y < enemies.y + len(enemies.skin):
-                enemies.erase()
-                spaceship_group.remove(enemies)
+        for enemies in (spaceship_group + spaceship_group_2 + spaceship_group_3):
+            if enemies.x <= self.x < enemies.x + 1 and enemies.y <= self.y < enemies.y + len(enemies.skin):
+                enemies.health -= 1
+                if enemies.health == 0:
+                    enemies.erase()
+                    spaceship_group.remove(enemies)
+                    score += (600 - (velocity * 100))
                 self.etat = 1
-                score += (600 - (velocity * 100))
-
-        for enemies in spaceship_group_2[:]:
-            if enemies.x <= self.x < enemies.x + 2 and enemies.y <= self.y < enemies.y + len(enemies.skin):
-                enemies.erase()
-                spaceship_group_2.remove(enemies)
-                self.etat = 1
-                score += (600 - (velocity * 100))
-
-        for enemies in spaceship_group_3[:]:
-            if enemies.x <= self.x < enemies.x + 2 and enemies.y <= self.y < enemies.y + len(enemies.skin):
-                enemies.erase()
-                spaceship_group_3.remove(enemies)
-                self.etat = 1
-                score += (600 - (velocity * 100))
 
 
 # creation d'un projectil (user) qui s'ajoute dans la liste des projectils user
@@ -238,7 +227,7 @@ def new_proj():
 
 class Projectil_Spaceship:
 
-    def __init__(self, x, y, ):
+    def __init__(self, x, y,):
         self.x = x
         self.y = y
         self.skin = "#"
@@ -246,7 +235,7 @@ class Projectil_Spaceship:
 
     def erase(self):
         move(self.x, self.y)
-        uart.write('  ' * len(self.skin))
+        uart.write(' ' * len(self.skin))
 
     def move(self):
         global game
@@ -270,58 +259,83 @@ class Projectil_Spaceship:
 # creation de la classe Spaceship ennemie
 
 class Spaceship:
-    def __init__(self, x, y, skin):
+    def __init__(self, x, y, skin, health):
         self.x = x
         self.y = y
         self.skin = skin
+        self.health = health
         self.etat_shoot = 0
+        self.tab_skin = self.skin.splitlines()
 
     def erase(self):
         move(self.x, self.y)
-        uart.write('  ' * len(self.skin))
+        a = 0
+        for i in self.tab_skin:
+            move(x=(self.x + a), y=self.y - 1)
+            uart.write(' ' * (len(i) + 1))
+            a += 1
 
     def move_left(self):
         self.erase()
         if self.y > (Left_Value + 2):
             self.y -= 1 + (velocity // 2)
-        move(self.x, self.y)
-        uart.write(self.skin)
+        self.write_skin()
 
     def move_right(self):
         self.erase()
-        if self.y < (Right_Value - len(self.skin) - 5):
+        if self.y < (Right_Value - len(self.tab_skin[0]) - 5):
             self.y += 1 + (velocity // 2)
-        move(self.x, self.y)
-        uart.write(self.skin)
+        self.write_skin()
 
     def move_forward(self):
         self.erase()
         if self.x < (Max_Value_move - velocity):
             self.x += 1
-        move(self.x, self.y)
-        uart.write(self.skin)
+        self.write_skin()
 
     def move_backward(self):
         self.erase()
         if self.x > (Top_Value + velocity):
             self.x -= 1
-        move(self.x, self.y)
-        uart.write(self.skin)
+        self.write_skin()
 
-    def standby(self):
-        self.erase()
+    def write_skin(self):
         move(self.x, self.y)
-        uart.write(self.skin)
+        a = 0
+        for i in self.tab_skin:
+            move(x=(self.x + a), y=self.y)
+            uart.write(i)
+            a += 1
 
     def shoot(self):
-        if self.etat_shoot <= 10:
+        if self.etat_shoot <= 25:
             proj_spaceship_group.append(
                 Projectil_Spaceship(
-                    x=self.x + 1,
-                    y=self.y + (len(self.skin) // 2),
+                    x=self.x + 1 + len(self.tab_skin),
+                    y=self.y + (len(self.tab_skin[0]) // 2),
                 )
             )
             self.etat_shoot += 1
+
+skin_enemis = r"""||--V--||"""
+
+skin_boss = r"""..............................
+⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⣀⣠⢤⣶⣄⣀⡀⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⢀⣴⡾⠿⠿⠏⠛⠉⠋⠷⢿⣆⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⣞⢿⠇⠄⠄⠄⠄⠄⠄⠄⠄⠉⢣⣀⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⣿⣽⠆⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠳⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⣿⣿⠇⡀⠤⠄⣀⣀⡄⠄⠄⢀⠠⠒⢱⠆⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⢸⣿⡆⠄⢤⡤⣤⡤⠠⠄⠄⡙⠹⠞⠻⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠜⣿⡷⡀⠄⠄⠈⠄⠄⠄⠄⠱⡄⠄⠄⢰⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠈⣈⡙⣇⠄⠄⠄⠄⠄⠄⠄⠄⠌⢦⠄⠄⡆⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⢍⣣⠄⠄⠄⠄⠄⠄⣤⣀⣀⣂⡹⠄⡏⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⡀⣴⣿⣿⡀⢰⣶⣶⣶⠿⠿⠿⠿⡷⣴⡃⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⣿⢻⣿⣿⣾⡀⠱⢄⢀⣀⣀⡼⠁⢾⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⢳⠈⢿⣹⠿⣢⣄⣀⠄⣠⣤⢽⣾⡿⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⢹⣰⣞⣿⡇⠉⢿⣿⣷⣿⣿⣿⠏⠁⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠨⡟⠃⢽⣅⠄⠈⠏⠛⠿⠿⠉⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠈⠄⠄⠈⠙⠛⠶⠚⠉⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+"""
 
 
 # definition des fonctions utilisees
@@ -332,36 +346,19 @@ def clock(timer):
 
 
 def velocity_up(timer):
-    global value_max_proj, velocity
-    if velocity < 5:
-        velocity += 1
+    global value_max_proj, velocity, test
+    test += 1
+    if (test % 2) == 0:
+        if velocity < 5:
+            velocity += 1
 
-    if value_max_proj > 1:
-        value_max_proj -= 1
+        if value_max_proj > 3:
+            value_max_proj -= 1
 
 
 def temps_de_jeux_up(timer):
     global temps_de_jeux
     temps_de_jeux += 1
-
-
-def compteur_end():
-    move(18, 25)
-    text = "Try again : "
-    uart.write(text)
-    for i in range(60, 30, -1):
-        value_compteur = "{} | ".format(i)
-        uart.write(value_compteur)
-        if push_button.value() == 1:
-            break
-        delay(1000)
-    move(21, (25 + len(text)))
-    for i in range(30, -1, -1):
-        value_compteur = "{} | ".format(i)
-        uart.write(value_compteur)
-        if push_button.value() == 1:
-            break
-        delay(1000)
 
 
 def borders():
@@ -453,31 +450,41 @@ def logo_victory():
 
 def game_reset():
     global spaceship_group, proj_group, proj_spaceship_group, default_velocity, velocity, default_value_max_proj, value_max_proj
-
+    global spaceship_group_2, spaceship_group_3, clock_timer, test
     for enemies in spaceship_group[:]:
         enemies.erase()
+    for enemies in spaceship_group_2[:]:
+        enemies.erase()
+    for enemies in spaceship_group_3[:]:
+        enemies.erase()
     spaceship_group = []
+    spaceship_group_2 = []
+    spaceship_group_3 = []
     for proj in proj_group[:]:
         proj.erase()
     proj_group = []
     proj_spaceship_group = []
 
-    velocity = default_velocity
+    clock_timer = 0
+
+    test = 0
+    velocity = 1
     value_max_proj = default_value_max_proj
 
 
 def game_info():
     spaceship = len(spaceship_group) + len(spaceship_group_2) + len(spaceship_group_3)
-    move((Bottom_Value + 1), (Left_Value + 10))
-    info_game = "Niveau : {} | Temps de Jeux = {} | Score = {} | Velocity = {} | Max Projectil = {} | Projectil Actuel = {} | Spaceship = {} ".format(
+    info_game = "Niveau : {} || Temps de Jeux = {} min {} sec || Score = {} || Velocity = {} || Max Projectil = {} || Projectil Actuel = {} || Vaisseau ennemies = {} ".format(
         game,
-        temps_de_jeux,
+        (temps_de_jeux // 60),
+        (temps_de_jeux % 60),
         score,
         velocity,
         value_max_proj,
         len(proj_group),
         spaceship,
     )
+    move((Bottom_Value + 1), ((Right_Value - len(info_game)) // 2))
     uart.write(info_game)
 
 
@@ -487,8 +494,6 @@ def game_home():
     clear_screen()
     borders()
     logo()
-    game_info()
-    game_reset()
 
     # 120 caracteres par ligne
 
@@ -506,7 +511,7 @@ ________________________________________________________________________________
 |             Le boutton noir de la carte vous sert seulement si vous voulez recommencer la parti à zéro !             |
 |______________________________________________________________________________________________________________________|
 |                                                                                                                      |
-| Règles du jeux :                                                                                                     |
+| Les règles du jeux sont les suivantes :                                                                              |
 |                                                                                                                      |
 | - Votre vaisseau peut se déplacer de la gauche vers la droite mais aussi d'avant en arrière !                        |
 |   Bouger votre carte là où vous voulez amener votre vaiseau !                                                        |
@@ -514,21 +519,23 @@ ________________________________________________________________________________
 | - Votre vaisseau a un nombre limité de missiles tirés en simultané                                                   |
 |   Il vous suffit d'appuyer sur le boutton bleu de la carte !                                                         |
 |                                                                                                                      |
-| - Toutes les 3 minutes :                                                                                             |
+| - Toutes les 1 minutes :                                                                                             |
 |                                                                                                                      |        
 |       - Votre vitesse de déplacement augmentera pour augmenter la difficulté                                         |
 |       - Votre nombre de missiles simultanés diminuera                                                                |
 |       - Votre score obtenu par ennemies éliminés diminue de 100                                                      |
-|         Les données sont écrites en bas à gauche !                                                                   |
+|         Les données sont écrites en bas !                                                                            |
 |                                                                                                                      |
 |           La vitesse de déplacement, le nombre de missiles simultané et le score obtenue par éliminations            |
 |                          seront remits à leur valeur par défaut à chaque début de niveau                             |
 |                                                                                                                      |
-| - Les vaisseaux ennemies ont la capacité de tirer des missiles                                                       |
+| - Attention ! Les vaisseaux ennemies ont la capacité de tirer des missiles                                           |
+|   Quand le niveau augmente, les vaisseaux gagnent en capacité de déplacement et tirent plus souvent                  | 
+|   Dans le niveau 4 tous les vaisseau doivent être touché 2 fois pour être mort                                       |
+|   Le boss présent dans ce niveau, doit être touché 20 fois pour mourir !                                             |
 |                                                                                                                      |
-| - Quand le niveau augmente, les vaisseaux gagnent en capacité de déplacement et tirent plus souvent                  | 
 |                                                                                                                      |
-|                                                                                                                      |
+|                                                Bonne chance a vous !!                                                |
 |                                             Obtenez le meilleur Score !!                                             |
 |                                                                                                                      |
 |______________________________________________________________________________________________________________________|
@@ -543,7 +550,54 @@ ________________________________________________________________________________
         uart.write(i)
         a += 1
 
+    text_2 = """
+    _____________________
+    |                   |
+    |  Votre vaisseau!  |
+    |                   |
+    |       |-0-|       |
+    |                   |
+    |   Vos missiles!   |
+    |                   |
+    |         @         |
+    |___________________|
+    """
+
+    tab_text_2 = text_2.splitlines()
+    largeur_2 = len(tab_text_2[1])
+    a = 0
+    b = int((((Right_Value - largeur) // 2) - largeur_2)//2)
+    mid = (Bottom_Value // 2) - 6
+    for i in tab_text_2:
+        move((mid + a), b)
+        uart.write(i)
+        a += 1
+
+    text_3 = r"""
+_____________________
+|                   |
+| Vaisseau Ennemie! |
+|                   |
+|    ||---V---||    |
+|                   |
+| Missiles Ennemie! |
+|                   |
+|         #         |
+|___________________|
+    """
+
+    tab_text_3 = text_3.splitlines()
+    largeur_3 = len(tab_text_3[1])
+    a = 0
+    b = int((((Right_Value // 2) + (largeur // 2)) + (largeur_3 // 2))+1)
+    mid = (Bottom_Value // 2) - 7
+    for i in tab_text_3:
+        move((mid + a), b)
+        uart.write(i)
+        a += 1
+
     while True:
+        game_info()
         if push_button.value() == 1:
             move(17, 60)
             uart.write("Le jeux se lance dans : ")
@@ -558,10 +612,12 @@ ________________________________________________________________________________
 def victory():
     global game
     clear_screen()
+    game_reset()
     game_info()
     borders()
     logo()
     logo_victory()
+
     text = """
 ________________________________________________________________________________________________________________________ 
 |                                                                                                                      |
@@ -570,7 +626,7 @@ ________________________________________________________________________________
 |                                                                                                                      |
 |                                                                                                                      |
 |                                           Votre Score final est de : {}                                              |
-|                                       Votre temps total pour finir est de : {}                                       |
+|                               Votre temps total pour finir est de : {} min et {} sec                                 |
 |                                                                                                                      |
 |                                                                                                                      |
 |                            Vous pouvez relancer une partie en repartant au menu principal                            |
@@ -578,7 +634,7 @@ ________________________________________________________________________________
 |                                                                                                                      |
 |                                                                                                                      |
 |______________________________________________________________________________________________________________________|
-""".format(score, temps_de_jeux)
+""".format(score, (temps_de_jeux // 60), (temps_de_jeux % 60))
 
     tab_text = text.splitlines()
     largeur = len(tab_text[1])
@@ -604,6 +660,7 @@ ________________________________________________________________________________
 def game_over():
     global game
     clear_screen()
+    game_reset()
     game_info()
     borders()
     logo()
@@ -616,7 +673,7 @@ ________________________________________________________________________________
 |                                                                                                                      |
 |                                                                                                                      |
 |                                           Votre Score final est de : {}                                           |
-|                                       Votre temps total pour finir est de : {}                                       |
+|                               Votre temps total pour finir est de : {} min et {} sec                                 |
 |                                                                                                                      |
 |                                                                                                                      |
 |                            Vous pouvez relancer une partie en repartant au menu principal                            |
@@ -624,7 +681,7 @@ ________________________________________________________________________________
 |                                                                                                                      |
 |                                                                                                                      |
 |______________________________________________________________________________________________________________________|
-""".format(score, temps_de_jeux)
+""".format(score, (temps_de_jeux // 60), (temps_de_jeux % 60))
 
     tab_text = text.splitlines()
     largeur = len(tab_text[1])
@@ -650,29 +707,21 @@ ________________________________________________________________________________
 # definition des niveaux
 
 def game_level_1():
-    global game
+    global game, temps_de_jeux, default_temps_de_jeux
 
-    game_reset()
     clear_screen()
     borders()
-
-    t = Timer(4, freq=1 / 180)
-    t.callback(velocity_up)
-
-    t = Timer(5, freq=1)
-    t.callback(clock)
-
-    t = Timer(6, freq=1)
-    t.callback(temps_de_jeux_up)
+    game_reset()
+    temps_de_jeux = default_temps_de_jeux
 
     for y in range(8):
         for x in range(2):
-            spaceship_group.append(Spaceship(x=5 + x * 6, y=33 + 19 * y, skin="||--V--||"))
+            spaceship_group.append(Spaceship(x=5 + x * 6, y=33 + 19 * y, skin=skin_enemis, health=1))
 
     while True:
 
         for enemies in spaceship_group[:]:
-            enemies.standby()
+            enemies.write_skin()
 
         game_info()
 
@@ -736,24 +785,15 @@ def game_level_2():
     clear_screen()
     borders()
 
-    t = Timer(4, freq=1 / 180)
-    t.callback(velocity_up)
-
-    t = Timer(5, freq=1)
-    t.callback(clock)
-
-    t = Timer(6, freq=1)
-    t.callback(temps_de_jeux_up)
-
     for y in range(8):
         for x in range(2):
-            spaceship_group.append(Spaceship(x=5 + x * 6, y=33 + 19 * y, skin="||--V--||"))
+            spaceship_group.append(Spaceship(x=5 + x * 6, y=33 + 19 * y, skin=skin_enemis, health=1))
     for y in range(9):
         for x in range(2):
-            spaceship_group.append(Spaceship(x=8 + x * 6, y=24 + 19 * y, skin="||--V--||"))
+            spaceship_group.append(Spaceship(x=8 + x * 6, y=24 + 19 * y, skin=skin_enemis, health=1))
 
     for enemies in spaceship_group[:]:
-        enemies.standby()
+        enemies.write_skin()
 
     while True:
         game_info()
@@ -826,24 +866,15 @@ def game_level_3():
     clear_screen()
     borders()
 
-    t = Timer(4, freq=1 / 180)
-    t.callback(velocity_up)
-
-    t = Timer(5, freq=1)
-    t.callback(clock)
-
-    t = Timer(6, freq=1)
-    t.callback(temps_de_jeux_up)
-
     for y in range(8):
         for x in range(4):
-            spaceship_group.append(Spaceship(x=5 + x * 6, y=33 + 19 * y, skin="||--V--||"))
+            spaceship_group.append(Spaceship(x=5 + x * 6, y=33 + 19 * y, skin=skin_enemis, health=1))
     for y in range(9):
         for x in range(3):
-            spaceship_group.append(Spaceship(x=8 + x * 6, y=24 + 19 * y, skin="||--V--||"))
+            spaceship_group.append(Spaceship(x=8 + x * 6, y=24 + 19 * y, skin=skin_enemis, health=1))
 
     for enemies in spaceship_group[:]:
-        enemies.standby()
+        enemies.write_skin()
 
     while True:
         game_info()
@@ -920,42 +951,31 @@ def game_level_4():
     clear_screen()
     borders()
 
-    t = Timer(4, freq=1 / 180)
-    t.callback(velocity_up)
-
-    t = Timer(5, freq=1)
-    t.callback(clock)
-
-    t = Timer(6, freq=1)
-    t.callback(temps_de_jeux_up)
+    for y in range(3):
+        for x in range(3):
+            spaceship_group.append(Spaceship(x=5 + x * 9, y=24 + 19 * y, skin=skin_enemis, health=2))
+    for y in range(2):
+        for x in range(2):
+            spaceship_group.append(Spaceship(x=10 + x * 9, y=33 + 19 * y, skin=skin_enemis, health=2))
 
     for y in range(3):
         for x in range(3):
-            spaceship_group.append(Spaceship(x=10 + x * 6, y=24 + 19 * y, skin="||--V--||"))
+            spaceship_group_2.append(Spaceship(x=23 + x * 9, y=81 + 19 * y, skin=skin_enemis, health=2))
     for y in range(2):
         for x in range(2):
-            spaceship_group.append(Spaceship(x=13 + x * 6, y=33 + 19 * y, skin="||--V--||"))
+            spaceship_group_2.append(Spaceship(x=28 + x * 9, y=90 + 19 * y, skin=skin_enemis, health=2))
 
     for y in range(3):
         for x in range(3):
-            spaceship_group_2.append(Spaceship(x=25 + x * 6, y=81 + 19 * y, skin="||--V--||"))
+            spaceship_group_3.append(Spaceship(x=5 + x * 9, y=138 + 19 * y, skin=skin_enemis, health=2))
     for y in range(2):
         for x in range(2):
-            spaceship_group_2.append(Spaceship(x=28 + x * 6, y=90 + 19 * y, skin="||--V--||"))
+            spaceship_group_3.append(Spaceship(x=10 + x * 9, y=147 + 19 * y, skin=skin_enemis, health=2))
 
-    for y in range(3):
-        for x in range(3):
-            spaceship_group_3.append(Spaceship(x=10 + x * 6, y=138 + 19 * y, skin="||--V--||"))
-    for y in range(2):
-        for x in range(2):
-            spaceship_group_3.append(Spaceship(x=13 + x * 6, y=147 + 19 * y, skin="||--V--||"))
+    spaceship_group_2.append(Spaceship(x=5, y=95, skin=skin_boss, health=20))
 
-    for enemies in spaceship_group[:]:
-        enemies.standby()
-    for enemies in spaceship_group_2[:]:
-        enemies.standby()
-    for enemies in spaceship_group_3[:]:
-        enemies.standby()
+    for enemies in (spaceship_group + spaceship_group_2 + spaceship_group_3):
+        enemies.write_skin()
 
     while True:
         game_info()
@@ -980,26 +1000,21 @@ def game_level_4():
         if len(spaceship_group) > 0 or len(spaceship_group_2) > 0 or len(spaceship_group_3) > 0:
             if (clock_timer % 10) != 0:
                 if (clock_timer % 10) < 5:
-                    for enemies in spaceship_group:
-                        enemies.move_left()
-                    for enemies in spaceship_group_2:
-                        enemies.move_left()
-                    for enemies in spaceship_group_3:
+                    for enemies in (spaceship_group + spaceship_group_2 + spaceship_group_3):
                         enemies.move_left()
                 elif (clock_timer % 10) > 5:
-                    for enemies in spaceship_group:
-                        enemies.move_right()
-                    for enemies in spaceship_group_2:
-                        enemies.move_right()
-                    for enemies in spaceship_group_3:
+                    for enemies in (spaceship_group + spaceship_group_2 + spaceship_group_3):
                         enemies.move_right()
 
-            elif (clock_timer % 5) == 0 or (clock_timer % 10) == 0:
-                choice(spaceship_group).shoot()
-                choice(spaceship_group_2).shoot()
-                choice(spaceship_group_3).shoot()
+            elif (clock_timer % 3) == 0 or (clock_timer % 5) == 0:
+                if len(spaceship_group) > 0:
+                    choice(spaceship_group).shoot()
+                if len(spaceship_group_2) > 0:
+                    choice(spaceship_group_2).shoot()
+                if len(spaceship_group_3) > 0:
+                    choice(spaceship_group_3).shoot()
 
-            if (clock_timer % 20) == 0:
+            if (clock_timer % 15) == 0:
                 a = randint(0, 5)
 
                 if a == 1:
@@ -1012,11 +1027,7 @@ def game_level_4():
                     for enemies in spaceship_group_3[:]:
                         enemies.move_forward()
                 if a == 4:
-                    for enemies in spaceship_group[:]:
-                        enemies.move_backward()
-                    for enemies in spaceship_group_2[:]:
-                        enemies.move_backward()
-                    for enemies in spaceship_group_3[:]:
+                    for enemies in (spaceship_group + spaceship_group_2 + spaceship_group_3):
                         enemies.move_backward()
 
         elif len(spaceship_group) == 0 and len(spaceship_group_2) == 0 and len(spaceship_group_3) == 0:
@@ -1062,6 +1073,15 @@ write_reg(addr_ctrl_reg1, 0x77)
 game = "HOME"
 
 while True:
+
+    t = Timer(4, freq=0.2/6)
+    t.callback(velocity_up)
+
+    t = Timer(5, freq=1)
+    t.callback(clock)
+
+    t = Timer(6, freq=1)
+    t.callback(temps_de_jeux_up)
 
     if game == "HOME":
         game_home()

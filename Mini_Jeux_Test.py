@@ -453,10 +453,16 @@ def logo_victory():
 
 def game_reset():
     global spaceship_group, proj_group, proj_spaceship_group, default_velocity, velocity, default_value_max_proj, value_max_proj
-
+    global spaceship_group_2, spaceship_group_3
     for enemies in spaceship_group[:]:
         enemies.erase()
+    for enemies in spaceship_group_2[:]:
+        enemies.erase()
+    for enemies in spaceship_group_3[:]:
+        enemies.erase()
     spaceship_group = []
+    spaceship_group_2 = []
+    spaceship_group_3 = []
     for proj in proj_group[:]:
         proj.erase()
     proj_group = []
@@ -468,7 +474,6 @@ def game_reset():
 
 def game_info():
     spaceship = len(spaceship_group) + len(spaceship_group_2) + len(spaceship_group_3)
-    move((Bottom_Value + 1), (Left_Value + 10))
     info_game = "Niveau : {} | Temps de Jeux = {} | Score = {} | Velocity = {} | Max Projectil = {} | Projectil Actuel = {} | Spaceship = {} ".format(
         game,
         temps_de_jeux,
@@ -478,6 +483,7 @@ def game_info():
         len(proj_group),
         spaceship,
     )
+    move((Bottom_Value + 1), ((Right_Value - len(info_game)) // 2))
     uart.write(info_game)
 
 
@@ -519,7 +525,7 @@ ________________________________________________________________________________
 |       - Votre vitesse de déplacement augmentera pour augmenter la difficulté                                         |
 |       - Votre nombre de missiles simultanés diminuera                                                                |
 |       - Votre score obtenu par ennemies éliminés diminue de 100                                                      |
-|         Les données sont écrites en bas à gauche !                                                                   |
+|         Les données sont écrites en bas !                                                                            |
 |                                                                                                                      |
 |           La vitesse de déplacement, le nombre de missiles simultané et le score obtenue par éliminations            |
 |                          seront remits à leur valeur par défaut à chaque début de niveau                             |
@@ -540,6 +546,52 @@ ________________________________________________________________________________
     b = int((Right_Value - largeur) // 2)
     for i in tab_text:
         move((19 + a), b)
+        uart.write(i)
+        a += 1
+
+    text_2 = """
+    _____________________
+    |                   |
+    |  Votre vaisseau!  |
+    |                   |
+    |       |-0-|       |
+    |                   |
+    |   Vos missiles!   |
+    |                   |
+    |         @         |
+    |___________________|
+    """
+
+    tab_text_2 = text_2.splitlines()
+    largeur_2 = len(tab_text_2[1])
+    a = 0
+    b = int((((Right_Value - largeur) // 2) - largeur_2)//2)
+    mid = (Bottom_Value // 2) - 6
+    for i in tab_text_2:
+        move((mid + a), b)
+        uart.write(i)
+        a += 1
+
+    text_3 = """
+_____________________
+|                   |
+| Vaisseau Ennemie  |
+|                   |
+|     ||--V--||     |
+|                   |
+| Missiles Ennemie! |
+|                   |
+|         #         |
+|___________________|
+    """
+
+    tab_text_3 = text_3.splitlines()
+    largeur_3 = len(tab_text_3[1])
+    a = 0
+    b = int((((Right_Value // 2) + (largeur // 2)) + (largeur_3 // 2))+1)
+    mid = (Bottom_Value // 2) - 7
+    for i in tab_text_3:
+        move((mid + a), b)
         uart.write(i)
         a += 1
 
@@ -1050,6 +1102,24 @@ def game_level_4():
             led_2.off()
             led_1.off()
 
+
+prof = """
+⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⣀⣠⢤⣶⣄⣀⡀⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⢀⣴⡾⠿⠿⠏⠛⠉⠋⠷⢿⣆⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⣞⢿⠇⠄⠄⠄⠄⠄⠄⠄⠄⠉⢣⣀⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⣿⣽⠆⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠳⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⣿⣿⠇⡀⠤⠄⣀⣀⡄⠄⠄⢀⠠⠒⢱⠆⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⢸⣿⡆⠄⢤⡤⣤⡤⠠⠄⠄⡙⠹⠞⠻⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠜⣿⡷⡀⠄⠄⠈⠄⠄⠄⠄⠱⡄⠄⠄⢰⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠈⣈⡙⣇⠄⠄⠄⠄⠄⠄⠄⠄⠌⢦⠄⠄⡆⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⢍⣣⠄⠄⠄⠄⠄⠄⣤⣀⣀⣂⡹⠄⡏⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⡀⣴⣿⣿⡀⢰⣶⣶⣶⠿⠿⠿⠿⡷⣴⡃⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⣿⢻⣿⣿⣾⡀⠱⢄⢀⣀⣀⡼⠁⢾⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⢳⠈⢿⣹⠿⣢⣄⣀⠄⣠⣤⢽⣾⡿⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⢹⣰⣞⣿⡇⠉⢿⣿⣷⣿⣿⣿⠏⠁⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠨⡟⠃⢽⣅⠄⠈⠏⠛⠿⠿⠉⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+⠄⠄⠄⠄⠄⠄⠄⠄⠈⠄⠄⠈⠙⠛⠶⠚⠉⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄
+"""
 
 # creation de notre vaisseau
 r = Racket(x=value_spawn_x, y=value_spawn_y, skin="|-0-|")
