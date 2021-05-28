@@ -40,11 +40,11 @@ Copié l'intégralité du code valeur_accel.py (avec les adresse changer si beso
 
 ![code2](https://user-images.githubusercontent.com/70941138/119277274-f7f4fa00-bc1e-11eb-9d58-07cd5e212fcf.PNG)
 
-Une fois les valeurs récupérer, rentrer ces valeur dans le code Mini_Jeux.py dans les variable balanced_x et balanced_y.
+Une fois les valeurs récupérer, rentrer ces valeur dans le code main.py dans les variable balanced_x et balanced_y.
 
 N'oublié pas de changer les adresse de lecture dans ce code aussi si vous les aviez changés dans le code précédent
 
-Une fois les variables modifié vous pouvez copier le code dans le main.py de la carte.
+Une fois les variables modifié, remplacer le fichier code main.py que vous avez modifié a la place du fichier main.py de la carte.
 
 Vous pouvez maintenant jouer à ce jeux avec l'affichage en UART !
 
@@ -72,3 +72,7 @@ C'est pour cela que je remercie notre intervenant M.POULAILLEAU Vincent pour les
 
 
 ## SPOILS VIDEO DU JEUX !!!
+
+https://user-images.githubusercontent.com/70941138/119910847-59d39d80-bf58-11eb-9845-173562f681c4.mp4
+
+
